@@ -4,7 +4,7 @@ from os import name
 
 import pretty_errors
 import wx
-from wx.core import MenuBar, Position, Size
+from wx.core import MenuBar, Position, Size, Button
 
 menu_title = {
     1:
@@ -24,22 +24,55 @@ class MainFrame(wx.Frame):
     def __init__(self, *args, **kw):
         super(MainFrame, self).__init__(*args, **kw)
 
-        self.createMenuBar()
-        # 在底部创建一个状态栏
-        self.CreateStatusBar()
+        self.initMenuBar()
 
-        self.pushToStatusBar('Already')
+        self.status_bar = self.CreateStatusBar()
+        self.status_bar.SetFieldsCount(3)
+        self.status_bar.SetStatusWidths([-1, -3, -1])
+
+        self.createWidget()
+
+        self.pushToStatusBar('Already', 0)
+
+    # 创建部件
 
     def createWidget(self):
 
-        panel = wx.Panel()
+        func_size = [150, 100]
+        size = wx.Size(func_size[0], func_size[1])
+        self.panel_func_1 = wx.Panel(self, -1, size=size, pos=(10, 0))
+        self.panel_func_2 = wx.Panel(self, -1, size=size, pos=(10, 100))
+        self.panel_func_3 = wx.Panel(self, -1, size=size, pos=(10, 200))
 
-        panel_str = wx.StaticText(panel, label="panel")
+        self.button_func_1 = wx.Button(
+            self.panel_func_1, -1, label='功能1', size=size, pos=self.calculatePosPoint(func_size, func_size))
+        self.button_func_2 = wx.Button(
+            self.panel_func_2, -1, label='功能2', size=size, pos=self.calculatePosPoint(func_size, func_size))
+        self.button_func_3 = wx.Button(self.panel_func_3, -1, label='功能3', size=size, pos=self.calculatePosPoint(func_size, func_size))
+
+        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
+            '已开启功能1', '功能'), self.button_func_1)
+        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
+            '已开启功能2', '功能'), self.button_func_2)
+        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox('已开启功能3', '功能'), self.button_func_3)
+
+        self.button_func_1.SetDefault()
+        self.button_func_2.SetDefault()
+        self.button_func_3.SetDefault()
+
+    # 在底部创建一个状态栏
+
+    def initStatusBar(self):
+        self.status_bar = self.CreateStatusBar()
+        # 创建三个分栏
+        self.status_bar.SetFieldsCount(3)
+        # 设置分栏宽度
+        self.status_bar.SetStatusWidths([-1, -3, -1])
 
     # 创建菜单栏
 
-    def createMenuBar(self):
-        
+    def initMenuBar(self):
+
         # wx.Menu.Append()
         # params:helpString -> 提示信息 显示在状态栏
 
@@ -61,39 +94,32 @@ class MainFrame(wx.Frame):
         self.SetMenuBar(menubar)
 
         # 绑定事件
-        self.Bind(wx.EVT_MENU, lambda event: self.menuOpenEvt(event), item_open)
-        self.Bind(wx.EVT_MENU, lambda event: self.menuSaveEvt(event), item_save)
-        self.Bind(wx.EVT_MENU, lambda event: self.menuEditEvt(event), item_edit)
+        # lambda vars: function(vars) -> 做到响应传参函数
+        # 菜单栏 点击 事件
+        self.Bind(wx.EVT_MENU, lambda msg: self.showMsgBox(
+            "opened"), item_open)
+        self.Bind(wx.EVT_MENU, lambda msg: self.showMsgBox("saved"), item_save)
+        self.Bind(wx.EVT_MENU, lambda msg: self.showMsgBox(
+            "Editing"), item_edit)
 
     def splitStr(self, text):
         return text.split('-')
 
     # 在状态栏里推送消息
 
-    def pushToStatusBar(self, text):
-        self.PushStatusText(text)
+    def pushToStatusBar(self, text, num):
+        self.status_bar.SetStatusText(text, num)
 
-    # 菜单栏 Open 事件
-    def menuOpenEvt(self, event):
-        msg = "Opened"
-        self.showMsgBox(msg)
-
-    # 菜单栏 Save 事件
-    def menuSaveEvt(self, event):
-        msg = "Saved"
-        self.showMsgBox(msg)
-
-    # 菜单栏 Edit 事件
-    def menuEditEvt(self, event):
-        msg = "Edited"
-        self.showMsgBox(msg)
-
-    def showMsgBox(self, text):
+    def showMsgBox(self, msg, title='MsgDialog'):
 
         msg_box = wx.MessageDialog(
-            self, text, 'MsgDialog', wx.YES_NO | wx.ICON_QUESTION)
+            self, msg, title, wx.YES_NO | wx.ICON_QUESTION)
         if msg_box.ShowModal() == wx.ID_YES:
             msg_box.Destroy()
+
+    def calculatePosPoint(self, bigger, smaller):
+        point = [int((bigger[0]-smaller[0])/2), int((bigger[1]-smaller[1])/2)]
+        return wx.Point(point[0], point[1])
 
 
 class Box(wx.Frame):
@@ -107,7 +133,7 @@ if __name__ == "__main__":
     # 设备显示器信息
     sys_windows_size = [1920, 1080]
     # 主窗口大小	像素
-    main_frame_size = [500, 350]
+    main_frame_size = [900, 600]
     # 主窗口位置	像素
     main_frame_pos = [int((sys_windows_size[0]-main_frame_size[0])/2),
                       int((sys_windows_size[1]-main_frame_size[1])/2)]
