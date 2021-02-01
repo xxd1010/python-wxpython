@@ -48,13 +48,15 @@ class MainFrame(wx.Frame):
             self.panel_func_1, -1, label='功能1', size=size, pos=self.calculatePosPoint(func_size, func_size))
         self.button_func_2 = wx.Button(
             self.panel_func_2, -1, label='功能2', size=size, pos=self.calculatePosPoint(func_size, func_size))
-        self.button_func_3 = wx.Button(self.panel_func_3, -1, label='功能3', size=size, pos=self.calculatePosPoint(func_size, func_size))
+        self.button_func_3 = wx.Button(
+            self.panel_func_3, -1, label='功能3', size=size, pos=self.calculatePosPoint(func_size, func_size))
 
         self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
             '已开启功能1', '功能'), self.button_func_1)
         self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
             '已开启功能2', '功能'), self.button_func_2)
-        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox('已开启功能3', '功能'), self.button_func_3)
+        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
+            '已开启功能3', '功能'), self.button_func_3)
 
         self.button_func_1.SetDefault()
         self.button_func_2.SetDefault()
