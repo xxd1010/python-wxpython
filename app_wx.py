@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from os import name
-
+import string
 import pretty_errors
 import wx
 from wx.core import MenuBar, Position, Size, Button
@@ -9,12 +9,13 @@ from wx.core import MenuBar, Position, Size, Button
 menu_title = {
     1:
         {
-            1: "打开-打开一个文件",
-            2: "保存-保存当前文件",
+            'name': "登录",
+            'more': ["登录-", "重新登录-"]
         },
     2:
         {
-            1: "编辑-编辑",
+            'name': "选项",
+            'more': ["更多选项-"]
         },
 }
 
@@ -38,29 +39,35 @@ class MainFrame(wx.Frame):
 
     def createWidget(self):
 
-        func_size = [150, 100]
+        func_size = [180, 80]
+
         size = wx.Size(func_size[0], func_size[1])
-        self.panel_func_1 = wx.Panel(self, -1, size=size, pos=(10, 0))
-        self.panel_func_2 = wx.Panel(self, -1, size=size, pos=(10, 100))
-        self.panel_func_3 = wx.Panel(self, -1, size=size, pos=(10, 200))
+
+        panel_func_1 = wx.Panel(self, -1, size=size, pos=(10, 10))
+        panel_func_2 = wx.Panel(self, -1, size=size, pos=(10, 100))
+        panel_func_3 = wx.Panel(self, -1, size=size, pos=(10, 190))
 
         self.button_func_1 = wx.Button(
-            self.panel_func_1, -1, label='功能1', size=size, pos=self.calculatePosPoint(func_size, func_size))
+            panel_func_1, -1, label='功能1', size=panel_func_1.GetSize(), pos=self.calculatePosPoint(func_size, func_size))
         self.button_func_2 = wx.Button(
-            self.panel_func_2, -1, label='功能2', size=size, pos=self.calculatePosPoint(func_size, func_size))
+            panel_func_2, -1, label='功能2', size=panel_func_2.GetSize(), pos=self.calculatePosPoint(func_size, func_size))
         self.button_func_3 = wx.Button(
-            self.panel_func_3, -1, label='功能3', size=size, pos=self.calculatePosPoint(func_size, func_size))
-
-        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
-            '已开启功能1', '功能'), self.button_func_1)
-        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
-            '已开启功能2', '功能'), self.button_func_2)
-        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
-            '已开启功能3', '功能'), self.button_func_3)
+            panel_func_3, -1, label='功能3', size=panel_func_3.GetSize(), pos=self.calculatePosPoint(func_size, func_size))
 
         self.button_func_1.SetDefault()
         self.button_func_2.SetDefault()
         self.button_func_3.SetDefault()
+
+        panel_text = wx.Panel(self, size=(600, 400), pos=(266, 10))
+        self.text = wx.TextCtrl(
+            panel_text, -1, value='', pos=(0, 0), size=panel_text.GetSize(), style=wx.TE_READONLY | wx.TE_MULTILINE)
+
+        self.Bind(wx.EVT_BUTTON, lambda text: self.pushText(
+            'text'), self.button_func_1)
+        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
+            '已开启功能2', '功能'), self.button_func_2)
+        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
+            '已开启功能3', '功能'), self.button_func_3)
 
     # 在底部创建一个状态栏
 
@@ -79,19 +86,21 @@ class MainFrame(wx.Frame):
         # params:helpString -> 提示信息 显示在状态栏
 
         file_menu = wx.Menu()
-        item_open = file_menu.Append(-1, self.splitStr(menu_title[1][1])[
-                                     0], self.splitStr(menu_title[1][1])[1])
-        item_save = file_menu.Append(-1, self.splitStr(menu_title[1][2])[
-                                     0], self.splitStr(menu_title[1][2])[1])
+        # 子选项命名
+        item_open = file_menu.Append(-1, self.splitStr(menu_title[1]['more'][0])[
+                                     0], self.splitStr(menu_title[1]['more'][0])[1])
+        item_save = file_menu.Append(-1, self.splitStr(menu_title[1]['more'][1])[
+                                     0], self.splitStr(menu_title[1]['more'][1])[1])
 
         option_menu = wx.Menu()
-        item_edit = option_menu.Append(-1, self.splitStr(menu_title[2][1])[
-                                       0], self.splitStr(menu_title[2][1])[1])
+        item_edit = option_menu.Append(-1, self.splitStr(menu_title[2]['more'][0])[
+                                       0], self.splitStr(menu_title[2]['more'][0])[1])
 
         menubar = wx.MenuBar()
 
-        menubar.Append(file_menu, "文件")
-        menubar.Append(option_menu, "操作")
+        # 菜单选项命名
+        menubar.Append(file_menu, menu_title[1]['name'])
+        menubar.Append(option_menu, menu_title[2]['name'])
 
         self.SetMenuBar(menubar)
 
@@ -123,11 +132,14 @@ class MainFrame(wx.Frame):
         point = [int((bigger[0]-smaller[0])/2), int((bigger[1]-smaller[1])/2)]
         return wx.Point(point[0], point[1])
 
+    def pushText(self, text):
+        self.text.AppendText(f"{text}\n")
 
-class Box(wx.Frame):
+
+class funcFrame(wx.Frame):
 
     def __init__(self, *args, **kw):
-        super(Box, self).__init__(*args, **kw)
+        super(funcFrame, self).__init__(*args, **kw)
 
 
 if __name__ == "__main__":
