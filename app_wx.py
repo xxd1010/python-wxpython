@@ -2,22 +2,26 @@
 
 from os import name
 import string
+import json
 import pretty_errors
+import time
 import wx
 from wx.core import MenuBar, Position, Size, Button
 
-menu_title = {
-    1:
-        {
-            'name': "登录",
-            'more': ["登录-", "重新登录-"]
-        },
-    2:
-        {
-            'name': "选项",
-            'more': ["更多选项-"]
-        },
-}
+import mi_motion
+
+# menu_title = {
+#     1:
+#         {
+#             'name': "登录",
+#             'more': ["登录-", "重新登录-"]
+#         },
+#     2:
+#         {
+#             'name': "选项",
+#             'more': ["更多选项-"]
+#         },
+# }
 
 
 class MainFrame(wx.Frame):
@@ -30,6 +34,8 @@ class MainFrame(wx.Frame):
         self.status_bar = self.CreateStatusBar()
         self.status_bar.SetFieldsCount(3)
         self.status_bar.SetStatusWidths([-1, -3, -1])
+
+        # self.font_text = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, False, '', wx.FONTENCODING_DEFAULT)
 
         self.createWidget()
 
@@ -44,8 +50,11 @@ class MainFrame(wx.Frame):
         size = wx.Size(func_size[0], func_size[1])
 
         panel_func_1 = wx.Panel(self, -1, size=size, pos=(10, 10))
-        panel_func_2 = wx.Panel(self, -1, size=size, pos=(10, 100))
-        panel_func_3 = wx.Panel(self, -1, size=size, pos=(10, 190))
+        panel_func_2 = wx.Panel(self, -1, size=size, pos=(10, func_size[1]+10))
+        panel_func_3 = wx.Panel(self, -1, size=size,
+                                pos=(10, func_size[1]*2+10))
+        mi_mition_panel = wx.Panel(
+            self, -1, size=size, pos=(10, func_size[1]*3+10))
 
         self.button_func_1 = wx.Button(
             panel_func_1, -1, label='功能1', size=panel_func_1.GetSize(), pos=self.calculatePosPoint(func_size, func_size))
@@ -53,14 +62,18 @@ class MainFrame(wx.Frame):
             panel_func_2, -1, label='功能2', size=panel_func_2.GetSize(), pos=self.calculatePosPoint(func_size, func_size))
         self.button_func_3 = wx.Button(
             panel_func_3, -1, label='功能3', size=panel_func_3.GetSize(), pos=self.calculatePosPoint(func_size, func_size))
+        self.mi_motion_button = wx.Button(
+            mi_mition_panel, -1, label='小米运动', size=mi_mition_panel.GetSize(), pos=self.calculatePosPoint(func_size, func_size))
 
         self.button_func_1.SetDefault()
         self.button_func_2.SetDefault()
         self.button_func_3.SetDefault()
+        self.mi_motion_button.SetDefault()
 
         panel_text = wx.Panel(self, size=(600, 400), pos=(266, 10))
         self.text = wx.TextCtrl(
             panel_text, -1, value='', pos=(0, 0), size=panel_text.GetSize(), style=wx.TE_READONLY | wx.TE_MULTILINE)
+        # self.text.SetFont(self.font_text)
 
         self.Bind(wx.EVT_BUTTON, lambda text: self.pushText(
             'text'), self.button_func_1)
@@ -68,6 +81,8 @@ class MainFrame(wx.Frame):
             '已开启功能2', '功能'), self.button_func_2)
         self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox(
             '已开启功能3', '功能'), self.button_func_3)
+        self.Bind(wx.EVT_BUTTON, lambda param: self.miMotion(
+            0), self.mi_motion_button)
 
     # 在底部创建一个状态栏
 
@@ -87,20 +102,20 @@ class MainFrame(wx.Frame):
 
         file_menu = wx.Menu()
         # 子选项命名
-        item_open = file_menu.Append(-1, self.splitStr(menu_title[1]['more'][0])[
-                                     0], self.splitStr(menu_title[1]['more'][0])[1])
-        item_save = file_menu.Append(-1, self.splitStr(menu_title[1]['more'][1])[
-                                     0], self.splitStr(menu_title[1]['more'][1])[1])
+        item_open = file_menu.Append(-1, self.splitStr(menu_title['1']['more'][0])[
+                                     0], self.splitStr(menu_title['1']['more'][0])[1])
+        item_save = file_menu.Append(-1, self.splitStr(menu_title['1']['more'][1])[
+                                     0], self.splitStr(menu_title['1']['more'][1])[1])
 
         option_menu = wx.Menu()
-        item_edit = option_menu.Append(-1, self.splitStr(menu_title[2]['more'][0])[
-                                       0], self.splitStr(menu_title[2]['more'][0])[1])
+        item_edit = option_menu.Append(-1, self.splitStr(menu_title['2']['more'][0])[
+                                       0], self.splitStr(menu_title['2']['more'][0])[1])
 
         menubar = wx.MenuBar()
 
         # 菜单选项命名
-        menubar.Append(file_menu, menu_title[1]['name'])
-        menubar.Append(option_menu, menu_title[2]['name'])
+        menubar.Append(file_menu, menu_title['1']['name'])
+        menubar.Append(option_menu, menu_title['2']['name'])
 
         self.SetMenuBar(menubar)
 
@@ -135,6 +150,29 @@ class MainFrame(wx.Frame):
     def pushText(self, text):
         self.text.AppendText(f"{text}\n")
 
+    def miMotion(self, param):
+        if param is param:
+            self.pushText(f"{self.getTime()} {self.mi_motion_button.GetLabelText()}正在执行...")
+            mi_motion.MAIN()
+            self.pushText(f"{self.getTime()} {self.mi_motion_button.GetLabelText()}执行完成...")
+
+    def getTime(self):
+        # 年月日
+        today = time.strftime("%F")
+
+        Year = int(time.strftime('%Y'))
+        Month = int(time.strftime('%m'))
+        Day = int(time.strftime('%d'))
+
+        # 时分秒
+        Hour = int(time.strftime('%H'))
+        Minute = int(time.strftime('%M'))
+        Second = int(time.strftime('%S'))
+
+        now = f'[{Year}-{Month}-{Day} {Hour}:{Minute}:{Second}]'
+
+        return now
+
 
 class funcFrame(wx.Frame):
 
@@ -143,6 +181,10 @@ class funcFrame(wx.Frame):
 
 
 if __name__ == "__main__":
+
+    with open("./config.json", 'r', encoding='utf-8') as f:
+        # json.dump(menu_title, f, ensure_ascii=False)
+        menu_title = json.load(f)
 
     # 设备显示器信息
     sys_windows_size = [1920, 1080]
