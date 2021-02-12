@@ -9,19 +9,27 @@ from wx.core import MenuBar, Position, Size, Button
 
 import pretty_errors
 import mi_motion
+import RSA
 
-# menu_title = {
-#     1:
-#         {
-#             'name': "登录",
-#             'more': ["登录-", "重新登录-"]
-#         },
-#     2:
-#         {
-#             'name': "选项",
-#             'more': ["更多选项-"]
-#         },
-# }
+
+menu_title = {
+    "main": {
+        "name": "界面",
+        "more": ["主界面-主界面"]
+    },
+    "login": {
+        "name": "登录",
+        "more": ["登录-登录", "重新登录-重新登录"]
+    },
+    "software": {
+        "name": "软件",
+        "more": ["酷安-酷安", "豌豆荚-豌豆荚", "吾爱论坛-吾爱论坛"]
+    },
+    "more": {
+        "name": "更多选项",
+        "more": ["更多选项-更多选项"]
+    }
+}
 
 
 class MainFrame(wx.Frame):
@@ -34,7 +42,7 @@ class MainFrame(wx.Frame):
         self.status_bar.SetFieldsCount(3)
         self.status_bar.SetStatusWidths([-1, -2, -1])
 
-        # self.textPanel = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, False, '', wx.FONTENCODING_DEFAULT)
+        # self.outputTextPanel = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, False, '', wx.FONTENCODING_DEFAULT)
 
         # self.createWidget()
 
@@ -67,50 +75,55 @@ class MainFrame(wx.Frame):
 
         self.functionBotton1 = wx.Button(functionPanel1,
                                          -1,
-                                         label='功能1',
+                                         label='获取时间',
                                          size=functionPanel1.GetSize(),
                                          pos=self.calculatePosPoint(
                                              buttonBoxSize, buttonBoxSize))
         self.functionButton2 = wx.Button(functionPanel2,
-                                       -1,
-                                       label='功能2',
-                                       size=functionPanel2.GetSize(),
-                                       pos=self.calculatePosPoint(
-                                           buttonBoxSize, buttonBoxSize))
+                                         -1,
+                                         label='加密',
+                                         size=functionPanel2.GetSize(),
+                                         pos=self.calculatePosPoint(
+                                             buttonBoxSize, buttonBoxSize))
         self.functionButton3 = wx.Button(functionPanel3,
-                                       -1,
-                                       label='功能3',
-                                       size=functionPanel3.GetSize(),
-                                       pos=self.calculatePosPoint(
-                                           buttonBoxSize, buttonBoxSize))
+                                         -1,
+                                         label='功能3',
+                                         size=functionPanel3.GetSize(),
+                                         pos=self.calculatePosPoint(
+                                             buttonBoxSize, buttonBoxSize))
         self.miMotionButton = wx.Button(miMitionPanel,
-                                          -1,
-                                          label='小米运动',
-                                          size=miMitionPanel.GetSize(),
-                                          pos=self.calculatePosPoint(
-                                              buttonBoxSize, buttonBoxSize))
+                                        -1,
+                                        label='小米运动',
+                                        size=miMitionPanel.GetSize(),
+                                        pos=self.calculatePosPoint(
+                                            buttonBoxSize, buttonBoxSize))
 
         self.functionBotton1.SetDefault()
         self.functionButton2.SetDefault()
         self.functionButton3.SetDefault()
         self.miMotionButton.SetDefault()
 
-        textPanel = wx.Panel(self, size=(600, 400), pos=(266, 10))
-        textPanel = wx.TextCtrl(textPanel,
-                                -1,
-                                value='',
-                                pos=(0, 0),
-                                size=textPanel.GetSize(),
-                                style=wx.TE_READONLY | wx.TE_MULTILINE)
-        # textPanel.SetFont(self.textPanel)
+        inputTextPanel = wx.Panel(self, size=(300, 60), pos=(266, 10))
+        self.inputText = wx.TextCtrl(inputTextPanel, -1, value='', pos=(
+            0, 0), size=inputTextPanel.GetSize(), style=wx.TE_MULTILINE)
 
-        self.Bind(wx.EVT_BUTTON, lambda msg: self.pushText(textPanel, self.getTime()),
+        outputTextPanel = wx.Panel(self, size=(315, 200), pos=(266, 100))
+        self.outputText = wx.TextCtrl(outputTextPanel,
+                                      -1,
+                                      value='',
+                                      pos=(0, 0),
+                                      size=outputTextPanel.GetSize(),
+                                      style=wx.TE_READONLY | wx.TE_MULTILINE)
+        # outputTextPanel.SetFont(self.outputTextPanel)
+
+        self.Bind(wx.EVT_BUTTON,
+                  lambda msg: self.pushText(self.outputText, self.getTime()),
                   self.functionBotton1)
-        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox('已开启功能2', '功能'),
-                  self.functionButton2)
+        self.Bind(wx.EVT_BUTTON, lambda msg: self.RSAEncDec(
+            self.inputText.GetValue()), self.functionButton2)
         self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox('已开启功能3', '功能'),
                   self.functionButton3)
-        self.Bind(wx.EVT_BUTTON, lambda param: self.miMotion(0),
+        self.Bind(wx.EVT_BUTTON, lambda param: self.miMotion('param'),
                   self.miMotionButton)
 
     # 在底部创建一个状态栏
@@ -183,27 +196,27 @@ class MainFrame(wx.Frame):
                   reLogin_item)
         # software Menu
         self.Bind(wx.EVT_MENU, lambda msg: self.showMsgBox("酷安"), kuAn_item)
-        self.Bind(wx.EVT_MENU, lambda msg: self.showMsgBox(
-            "豌豆荚"), wanDouJia_item)
+        self.Bind(wx.EVT_MENU, lambda msg: self.showMsgBox("豌豆荚"),
+                  wanDouJia_item)
 
-    def splitStr(self, textPanel):
+    def splitStr(self, text):
         # return title, desp
-        return textPanel.split('-')
+        return text.split('-')
 
     # 在状态栏里推送消息
 
     def pushToStatusBar(self, text, num):
         self.status_bar.SetStatusText(text, num)
 
-    def showMsgBox(self, msg, title = 'MsgDialog'):
+    def showMsgBox(self, msg, title='MsgDialog'):
 
-        msg_box=wx.MessageDialog(self, msg, title,
+        msg_box = wx.MessageDialog(self, msg, title,
                                    wx.YES_NO | wx.ICON_QUESTION)
         if msg_box.ShowModal() == wx.ID_YES:
             msg_box.Destroy()
 
     def calculatePosPoint(self, bigger, smaller):
-        point=[
+        point = [
             int((bigger[0] - smaller[0]) / 2),
             int((bigger[1] - smaller[1]) / 2)
         ]
@@ -212,17 +225,32 @@ class MainFrame(wx.Frame):
     def pushText(self, Panel, text):
         Panel.AppendText(f"{text}\n")
 
+    # 外部小功能
+
     def miMotion(self, param):
         if param is param:
-            self.pushText(
-                f"{self.getTime()} {self.miMotionButton.GetLabelText()}正在执行..."
-            )
+            self.pushText(self.outputText,
+                          f"{self.getTime()} {self.miMotionButton.GetLabelText()}正在执行..."
+                          )
 
-            textPanel = mi_motion.MAIN()
-            self.pushText(f"{self.getTime()}\n{textPanel}")
-            self.pushText(
-                f"{self.getTime()} {self.miMotionButton.GetLabelText()}执行完成..."
-            )
+            text = mi_motion.MAIN()
+            self.pushText(self.outputText, f"{self.getTime()}\n{text}")
+            self.pushText(self.outputText,
+                          f"{self.getTime()} {self.miMotionButton.GetLabelText()}执行完成..."
+                          )
+
+    def RSAEncDec(self, message):
+        if message != '':
+            message = message.split('\n')
+            print(message)
+            for i  in message:
+                cipher, plainNum = RSA.RsaEncDec(i)
+                self.pushText(self.outputText,
+                              f"cipher:{cipher}\nplainNum:{plainNum}")
+        else:
+            self.pushText(self.outputText, "请输入...")
+
+    # 获取时间
 
     def getTime(self):
         # 年月日
@@ -249,15 +277,15 @@ class funcFrame(wx.Frame):
 
 if __name__ == "__main__":
 
-    with open("./config.json", 'r', encoding='utf-8') as f:
-        # json.dump(menu_title, f, ensure_ascii=False)
-        menu_title = json.load(f)
+    # with open("./config.json", 'r', encoding='utf-8') as f:
+    #     # json.dump(menu_title, f, ensure_ascii=False)
+    #     menu_title = json.load(f)
 
     # 设备显示器信息
     sys_windows_size = [1920, 1080]
-    # 主窗口大小	像素
-    main_frame_size = [900, 600]
-    # 主窗口位置	像素
+    # 主窗口大小 像素
+    main_frame_size = [600, 400]
+    # 主窗口位置 像素
     main_frame_pos = [
         int((sys_windows_size[0] - main_frame_size[0]) / 2),
         int((sys_windows_size[1] - main_frame_size[1]) / 2)
