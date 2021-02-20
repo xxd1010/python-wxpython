@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 
 from os import name
+from re import I
 import string
 import json
 import time
 import wx
+import wx.grid
 from wx.core import MenuBar, Position, Size, Button
 
 import pretty_errors
 import mi_motion
-import RSA
-
+import RSAEnDecrypt
+import hutlib.main as hutlib
 
 menu_title = {
     "main": {
@@ -48,7 +50,7 @@ class MainFrame(wx.Frame):
 
         self.pushToStatusBar('Already', 0)
 
-    def creatFrame(self):
+    def createFrame(self):
         self.new_frame = funcFrame()
 
     # 创建部件
@@ -64,14 +66,14 @@ class MainFrame(wx.Frame):
                                   -1,
                                   size=size,
                                   pos=(10, buttonBoxSize[1] + 10))
-        functionPanel3 = wx.Panel(self,
-                                  -1,
-                                  size=size,
-                                  pos=(10, buttonBoxSize[1] * 2 + 10))
         miMitionPanel = wx.Panel(self,
                                  -1,
                                  size=size,
-                                 pos=(10, buttonBoxSize[1] * 3 + 10))
+                                 pos=(10, buttonBoxSize[1] * 2 + 10))
+        functionPanel3 = wx.Panel(self,
+                                  -1,
+                                  size=size,
+                                  pos=(10, buttonBoxSize[1] * 3 + 10))
 
         self.functionBotton1 = wx.Button(functionPanel1,
                                          -1,
@@ -79,18 +81,18 @@ class MainFrame(wx.Frame):
                                          size=functionPanel1.GetSize(),
                                          pos=self.calculatePosPoint(
                                              buttonBoxSize, buttonBoxSize))
-        self.functionButton2 = wx.Button(functionPanel2,
-                                         -1,
-                                         label='加密',
-                                         size=functionPanel2.GetSize(),
-                                         pos=self.calculatePosPoint(
-                                             buttonBoxSize, buttonBoxSize))
-        self.functionButton3 = wx.Button(functionPanel3,
-                                         -1,
-                                         label='功能3',
-                                         size=functionPanel3.GetSize(),
-                                         pos=self.calculatePosPoint(
-                                             buttonBoxSize, buttonBoxSize))
+        self.encryptButton = wx.Button(functionPanel2,
+                                       -1,
+                                       label='加密',
+                                       size=functionPanel2.GetSize(),
+                                       pos=self.calculatePosPoint(
+                                           buttonBoxSize, buttonBoxSize))
+        self.loginLibButton = wx.Button(functionPanel3,
+                                        -1,
+                                        label='登录学校图书馆',
+                                        size=functionPanel3.GetSize(),
+                                        pos=self.calculatePosPoint(
+                                            buttonBoxSize, buttonBoxSize))
         self.miMotionButton = wx.Button(miMitionPanel,
                                         -1,
                                         label='小米运动',
@@ -98,16 +100,16 @@ class MainFrame(wx.Frame):
                                         pos=self.calculatePosPoint(
                                             buttonBoxSize, buttonBoxSize))
 
-        self.functionBotton1.SetDefault()
-        self.functionButton2.SetDefault()
-        self.functionButton3.SetDefault()
+        self.encryptButton.SetDefault()
         self.miMotionButton.SetDefault()
+        self.loginLibButton.SetDefault()
+        self.functionBotton1.SetDefault()
 
-        inputTextPanel = wx.Panel(self, size=(300, 60), pos=(266, 10))
+        inputTextPanel = wx.Panel(self, size=(600, 60), pos=(350, 20))
         self.inputText = wx.TextCtrl(inputTextPanel, -1, value='', pos=(
-            0, 0), size=inputTextPanel.GetSize(), style=wx.TE_MULTILINE)
+            0, 0), size=inputTextPanel.GetSize())
 
-        outputTextPanel = wx.Panel(self, size=(315, 200), pos=(266, 100))
+        outputTextPanel = wx.Panel(self, size=(600, 400), pos=(350, 80))
         self.outputText = wx.TextCtrl(outputTextPanel,
                                       -1,
                                       value='',
@@ -120,9 +122,9 @@ class MainFrame(wx.Frame):
                   lambda msg: self.pushText(self.outputText, self.getTime()),
                   self.functionBotton1)
         self.Bind(wx.EVT_BUTTON, lambda msg: self.RSAEncDec(
-            self.inputText.GetValue()), self.functionButton2)
-        self.Bind(wx.EVT_BUTTON, lambda msg: self.showMsgBox('已开启功能3', '功能'),
-                  self.functionButton3)
+            self.inputText.GetValue()), self.encryptButton)
+        self.Bind(wx.EVT_BUTTON, lambda user: self.hutLib(),
+                  self.loginLibButton)
         self.Bind(wx.EVT_BUTTON, lambda param: self.miMotion('param'),
                   self.miMotionButton)
 
@@ -199,6 +201,19 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, lambda msg: self.showMsgBox("豌豆荚"),
                   wanDouJia_item)
 
+    def createTable(self):
+
+        grid = wx.grid.Grid(self, -1)
+
+        grid.createGrid(100, 10)
+
+        grid.SetRowSize(0, 60)
+        grid.SetColSize(0, 120)
+
+        grid.SetCellValue(0, 0, 'wxGrid is good')
+
+    # 划分字符
+
     def splitStr(self, text):
         # return title, desp
         return text.split('-')
@@ -215,6 +230,8 @@ class MainFrame(wx.Frame):
         if msg_box.ShowModal() == wx.ID_YES:
             msg_box.Destroy()
 
+    # 计算坐标点
+
     def calculatePosPoint(self, bigger, smaller):
         point = [
             int((bigger[0] - smaller[0]) / 2),
@@ -222,10 +239,13 @@ class MainFrame(wx.Frame):
         ]
         return wx.Point(point[0], point[1])
 
+    # 推送
+
     def pushText(self, Panel, text):
         Panel.AppendText(f"{text}\n")
 
     # 外部小功能
+    # 小米运动
 
     def miMotion(self, param):
         if param is param:
@@ -239,16 +259,35 @@ class MainFrame(wx.Frame):
                           f"{self.getTime()} {self.miMotionButton.GetLabelText()}执行完成..."
                           )
 
+    # RSA加密
+
     def RSAEncDec(self, message):
         if message != '':
             message = message.split('\n')
-            print(message)
-            for i  in message:
-                cipher, plainNum = RSA.RsaEncDec(i)
+            for i in message:
+                encrypt = RSAEnDecrypt.main(i)
                 self.pushText(self.outputText,
-                              f"cipher:{cipher}\nplainNum:{plainNum}")
+                              f"encPwd:{encrypt.decode('utf8')}\nPWD:{i}")
         else:
             self.pushText(self.outputText, "请输入...")
+
+    # 登录学校图书馆
+
+    def hutLib(self):
+        # self.pushText(self.outputText, '输入用户名:')
+        username = self.inputText.GetValue()
+        username = '17405702222'
+        password = 'hutlib@#$'
+        result = hutlib.main(username, password)
+
+        item_info, list_lib = hutlib.getItemInfo(result)
+        for i in item_info:
+            self.pushText(self.outputText, i)
+        # self.outputText.Hide()
+        # grid = wx.grid.Grid(self, pos=(200, 80), size=(700, 400))
+        # grid.CreateGrid(10, 5)
+        # table = GridTable(item_info)
+        # grid.SetTable(table, True)
 
     # 获取时间
 
@@ -269,14 +308,65 @@ class MainFrame(wx.Frame):
             Year, Month, Day, Hour, Minute, Second)
         return now
 
+    # 装饰器
+
+    def warpper(func):
+        def warp():
+            print('正在请求...')
+            result = func()
+            print('请求完成...')
+            return result
+
 
 class funcFrame(wx.Frame):
     def __init__(self, *args, **kw):
         super(funcFrame, self).__init__(*args, **kw)
 
 
-if __name__ == "__main__":
+class GridTable(wx.grid.PyGridTableBase):
 
+    def __init__(self, data):
+        wx.grid.GridTableBase.__init__(self)
+        self.row = 10
+        self.column = 5
+        self.data = data
+        self.column = ['名称', '分类', '链接', 'rid']
+
+        self.odd = wx.grid.GridCellAttr()
+        # self.odd.SetBackgroundColour('white')
+        # self.odd.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD))
+        #
+        self.event = wx.grid.GridCellAttr()
+        # self.event.SetBackgroundColour('sky blue')
+        # self.event.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD))
+
+    def GetNumberRows(self):
+        return 50
+
+    def GetNumberCols(self):
+        return 50
+
+    def IsEmptyCell(self, row, col):
+        return self.data.get((row, col)) is not None
+
+    def GetValue(self, row, col):
+        value = self.data.get((row, col))
+        if value is not None:
+            return value
+        else:
+            return ''
+
+    def SetValue(self, row, col, value):
+        self.data[(row, col)] = value
+        self.data.clear()
+
+    def GetAttr(self, row, col, kind):
+        attr = [self.event, self.odd][row % 2]
+        attr.IncRef()
+        return attr
+
+
+if __name__ == "__main__":
     # with open("./config.json", 'r', encoding='utf-8') as f:
     #     # json.dump(menu_title, f, ensure_ascii=False)
     #     menu_title = json.load(f)
@@ -284,7 +374,7 @@ if __name__ == "__main__":
     # 设备显示器信息
     sys_windows_size = [1920, 1080]
     # 主窗口大小 像素
-    main_frame_size = [600, 400]
+    main_frame_size = [1000, 600]
     # 主窗口位置 像素
     main_frame_pos = [
         int((sys_windows_size[0] - main_frame_size[0]) / 2),
